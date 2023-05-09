@@ -1,6 +1,9 @@
+from os import path
+
 from typing import Mapping, Dict, Any
 import aws_cdk as cdk
 from aws_cdk import Environment, IStackSynthesizer, PermissionsBoundary, pipelines
+from aws_cdk import aws_codecommit as codecommit
 
 from constructs import Construct
 
@@ -35,4 +38,18 @@ class Pipeline(cdk.Stack):
             termination_protection=termination_protection,
         )
 
-        pipelines.CodePipeline(self, "Pipeline", synth=pipelines.ShellStep())
+        repository = codecommit.Repository(
+            self,
+            "Repository",
+            repository_name="aws-ecs-fargate-nlb-apigateway",
+        )
+
+        pipelines.CodePipeline(
+            self,
+            "Pipeline",
+            synth=pipelines.ShellStep(
+                "ShellStep",
+                input=pipelines.CodePipelineSource.code_commit(repository, "main"),
+                commands=["npm ci", "npm run build", "npx cdk synth"],
+            ),
+        )
