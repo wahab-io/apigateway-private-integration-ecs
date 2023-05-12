@@ -77,7 +77,11 @@ class Pipeline(cdk.Stack):
             build_spec=codebuild.BuildSpec.from_source_filename(
                 "sample-app/buildspec.yml"
             ),
-            environment=codebuild.BuildEnvironment(privileged=True),
+            environment=codebuild.BuildEnvironment(
+                compute_type=codebuild.ComputeType.LARGE,
+                build_image=codebuild.LinuxArmBuildImage.AMAZON_LINUX_2_STANDARD_2_0,
+                privileged=True,
+            ),
             environment_variables={
                 "AWS_ACCOUNT_ID": codebuild.BuildEnvironmentVariable(
                     value=self.account
