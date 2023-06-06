@@ -1,32 +1,20 @@
 #!/usr/bin/env python3
-import os
-
 import aws_cdk as cdk
-from aws_cdk import aws_ec2 as ec2
-from aws_cdk import aws_ecs as ecs
-from aws_cdk import aws_ecs_patterns as ecs_patterns
 from pipeline import Pipeline
+from backend import Backend
+from repository import Repository
 
 
 app = cdk.App()
-# stack = cdk.Stack(app, "ApiGatewayNlbEcsStack")
 
-# # create a VPC
-# vpc = ec2.Vpc(stack, "VPC", max_azs=3)
+# create a repository stack
+repository = Repository(app, "Repository", env=cdk.Environment(region="us-east-1"))
 
-# # create ecs cluster and network load balancer service
-# cluster = ecs.Cluster(stack, "EcsCluster")
-# ecs_patterns.NetworkLoadBalancedFargateService(
-#     stack,
-#     "Service",
-#     cluster=cluster,
-#     vpc=vpc,
-#     memory_limit_mib=4096,
-#     cpu=1024,
-#     task_image_options=ecs_patterns.NetworkLoadBalancedTaskImageOptions(image="")
-# )
+# create a backend stack outside the scope of the pipeline
+backend = Backend(app, "Backend", env=cdk.Environment(region="us-east-1"))
+backend.add_dependency(repository)
 
-
-Pipeline(app, "Pipeline")
+# create a pipeline stack that can deploy backend as part of CI/CD
+pipeline = Pipeline(app, "Pipeline", env=cdk.Environment(region="us-west-2"))
 
 app.synth()

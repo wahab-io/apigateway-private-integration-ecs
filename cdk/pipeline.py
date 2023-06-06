@@ -9,7 +9,6 @@ from aws_cdk import aws_codebuild as codebuild
 from aws_cdk import aws_codepipeline as codepipeline
 from aws_cdk import aws_codepipeline_actions as actions
 from aws_cdk import aws_ecr as ecr
-from aws_cdk.pipelines import FileSet
 
 from constructs import Construct
 
@@ -17,34 +16,22 @@ from deployment import Deployment
 
 
 class Pipeline(cdk.Stack):
+    """Pipeline stack that creates a codepipeline that deploys the sample-app to ECS Fargate and NLB with API Gateway
+
+
+
+    Args:
+        Stack: cdk.Stack (Construct Class)
+    """
+
     def __init__(
         self,
-        scope: Construct | None = None,
-        id: str | None = None,
-        *,
-        analytics_reporting: bool | None = None,
-        cross_region_references: bool | None = None,
-        description: str | None = None,
-        env: Environment | Dict[str, Any] | None = None,
-        permissions_boundary: PermissionsBoundary | None = None,
-        stack_name: str | None = None,
-        synthesizer: IStackSynthesizer | None = None,
-        tags: Mapping[str, str] | None = None,
-        termination_protection: bool | None = None
+        scope: Construct,
+        construct_id: str,
+        image_repository: ecr.Repository | None = None,
+        **kwargs: Any,
     ) -> None:
-        super().__init__(
-            scope,
-            id,
-            analytics_reporting=analytics_reporting,
-            cross_region_references=cross_region_references,
-            description=description,
-            env=env,
-            permissions_boundary=permissions_boundary,
-            stack_name=stack_name,
-            synthesizer=synthesizer,
-            tags=tags,
-            termination_protection=termination_protection,
-        )
+        super().__init__(scope, construct_id, **kwargs)
 
         repository = codecommit.Repository(
             self,
@@ -52,9 +39,10 @@ class Pipeline(cdk.Stack):
             repository_name="aws-ecs-fargate-nlb-apigateway",
         )
 
-        sample_app_repository = ecr.Repository(
-            self, "ContainerRepository", repository_name="sample-app"
-        )
+        if image_repository is None:
+            image_repository = ecr.Repository(
+                self, "ContainerRepository", repository_name="sample-app"
+            )
 
         # create a codepipeline
         pipeline = codepipeline.Pipeline(self, "CodePipeline")
@@ -91,7 +79,9 @@ class Pipeline(cdk.Stack):
                 ),
             },
         )
-        sample_app_repository.grant_pull_push(sample_app_build_project)
+
+        # grant codebuild project access to ECR
+        image_repository.grant_pull_push(sample_app_build_project)
 
         # add codebuild project to code pipeline as stage
         pipeline.add_stage(
@@ -122,5 +112,8 @@ class Pipeline(cdk.Stack):
             ),
         )
 
-        non_prod = Deployment(self, "NonProd")
+        non_prod = Deployment(
+            self,
+            "NonProd",
+        )
         code_pipeline.add_stage(non_prod)

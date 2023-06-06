@@ -15,7 +15,7 @@ def hello():
 
 @app.route("/info")
 def info():
-    return jsonify(request.headers)
+    return jsonify(request.headers.to_wsgi_list())
 
 
 @app.route("/flask-health-check")
