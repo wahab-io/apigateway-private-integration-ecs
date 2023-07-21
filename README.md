@@ -1,4 +1,4 @@
-# TODO: Project Name
+# API Gateway private integration with ECS
 
 ## Overview
 
@@ -21,12 +21,12 @@ There are multiple ways to deploy this application. You can deploy the stack dir
 ### Individual Stack Deployment
 To deploy the application directly, ideally to development environment
 
-First, create the ECR repository
+First, create the ECR repository, by deploying the following CDK stack
 ```sh
 npx cdk deploy Repository
 ```
 
-Then login to the repository
+Then login to the repository, by replacing desired `<region>` and `<aws-account-id>` values below
 ```sh
 aws ecr get-login-password --region <region> | docker login --username AWS --password-stdin <aws-account-id>.dkr.ecr.<region>.amazonaws.com
 ```
